@@ -1,4 +1,4 @@
-
+/* 
 body {
   font-family: Arial, sans-serif;
   background-color: #f8f9fa;
@@ -219,4 +219,35 @@ body {
   }
 } 
 
+ */
+ body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 0;
+}
 
+.pos-container {
+  width: 90%;
+  margin: auto;
+  padding: 20px;
+}
+
+.content {
+  display: flex;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+  }
+
+  .dropdown-section {
+    flex-direction: column;
+  }
+
+  .table-button {
+    margin-top: 5px;
+  }
+}
