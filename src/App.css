@@ -1,4 +1,4 @@
-/* General Styles */
+
 body {
   font-family: Arial, sans-serif;
   background-color: #f8f9fa;
@@ -12,7 +12,7 @@ body {
   padding: 20px;
 }
 
-/* Header */
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -28,7 +28,6 @@ body {
   font-size: 24px;
 }
 
-/* Table Selection Buttons */
 .table-button {
   background-color: #ffc107;
   color: black;
@@ -44,7 +43,7 @@ body {
   background-color: #e0a800;
 }
 
-/* Search & Filter */
+
 .search-filter {
   display: flex;
   gap: 10px;
@@ -59,7 +58,7 @@ body {
   border-radius: 5px;
 }
 
-/* Dropdown Section */
+
 .dropdown-section {
   display: flex;
   gap: 15px;
@@ -74,13 +73,13 @@ body {
   border-radius: 5px;
 }
 
-/* Content Section */
+
 .content {
   display: flex;
   gap: 20px;
 }
 
-/* Menu Section */
+
 .menu-section {
   flex: 2;
   background: white;
@@ -132,7 +131,7 @@ body {
   color: #28a745;
 }
 
-/* Order Summary */
+
 .order-summary {
   flex: 1;
   background: white;
@@ -172,7 +171,6 @@ body {
   background: #c82333;
 }
 
-/* Total & Buttons */
 .order-summary h3 {
   text-align: right;
   margin-top: 10px;
@@ -207,7 +205,6 @@ body {
   background: #c82333;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .content {
     flex-direction: column;
@@ -220,4 +217,6 @@ body {
   .table-button {
     margin-top: 5px;
   }
-}
+} 
+
+
