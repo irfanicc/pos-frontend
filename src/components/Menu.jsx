@@ -6,6 +6,10 @@ const Menu = ({ dishes, addToOrder }) => {
   return (
     <div className="menu-section">
       <h1 className="title">Menu</h1>
+      <button className="add-dish-btn" onClick="#">
+        Add Dish
+      </button>
+      
       <div className="dish-grid">
         {dishes.map((dish) => (
           <div key={dish.id} className="dish-card" onClick={() => addToOrder(dish)}>
@@ -15,6 +19,7 @@ const Menu = ({ dishes, addToOrder }) => {
           </div>
         ))}
       </div>
+      
     </div>
   );
 };
