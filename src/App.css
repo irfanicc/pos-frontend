@@ -21,6 +21,22 @@
   gap: 20px;
 }
 
+.home-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.home-icon {
+  margin-right: 8px;
+  font-size: 22px;
+  color: #28a745; /* Change color as needed */
+}
+
+
 @media (max-width: 768px) {
   .content {
     flex-direction: column;
@@ -33,4 +49,6 @@
   .table-button {
     margin-top: 5px;
   }
+
+  
 }

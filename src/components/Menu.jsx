@@ -1,14 +1,18 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "../style.css/Menu.css";
 
 
 const Menu = ({ dishes, addToOrder }) => {
+  const navigate = useNavigate();
   return (
     <div className="menu-section">
       <h1 className="title">Menu</h1>
-      <button className="add-dish-btn" onClick="#">
-        Add Dish
+      <button className="add-dish-btn" onClick={() => window.open("/add-dish", "_blank")}>
+         Add Dish
       </button>
+
+      
       
       <div className="dish-grid">
         {dishes.map((dish) => (

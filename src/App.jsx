@@ -3,12 +3,17 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FaHome } from "react-icons/fa";
 import Header from "./components/Header";
 import SearchFilter from "./components/SearchFilter";
 import DropdownSection from "./components/DropdownSection";
 import Menu from "./components/Menu";
 import OrderSummary from "./components/OrderSummary";
+import AddDish from "./components/AddDish";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+
 import "./App.css";
+
 
 const App = () => {
   const [dishes, setDishes] = useState([]);
@@ -142,18 +147,39 @@ const App = () => {
   };
 
   return (
-    <div className="pos-container">
-      <Header order={order} viewOrder={viewOrder} />
-      <SearchFilter search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} />
-      <DropdownSection tables={tables} selectedTable={selectedTable} setSelectedTable={setSelectedTable} employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee} order={order} />
-      <Menu dishes={dishes} addToOrder={addToOrder} />
-      <OrderSummary activeTable={activeTable} selectedEmployee={selectedEmployee} currentTableOrder={order[activeTable] || []} calculateTotal={calculateTotal} removeFromOrder={removeFromOrder}
+    <Router>
+      <div className="pos-container">
+      <nav>
+           <Link to="/" className="home-link">
+           <FaHome className="home-icon" /> Home</Link>
+      </nav>
+
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <>
+                <Header order={order} viewOrder={viewOrder} />
+                <SearchFilter search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} />
+                <DropdownSection tables={tables} selectedTable={selectedTable} setSelectedTable={setSelectedTable} employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee} order={order} />
+                <Menu dishes={dishes} addToOrder={addToOrder} />
+                <OrderSummary
+                  activeTable={activeTable}
+                  selectedEmployee={selectedEmployee}
+                  currentTableOrder={order[activeTable] || []}
+                  calculateTotal={calculateTotal}
+                  removeFromOrder={removeFromOrder}
                   sendOrder={sendOrder}
                   increaseQuantity={increaseQuantity}
                   decreaseQuantity={decreaseQuantity}
-                                                     />
-
-    </div>
+                />
+              </>
+            }
+          />
+          <Route path="/add-dish" element={<AddDish />} />
+        </Routes>
+      </div>
+    </Router>
     
   );
  
