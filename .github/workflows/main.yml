@@ -14,12 +14,12 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest pos-frontend/
-          docker push ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest pos-frontend/
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
       - name: Set up SSH Key
         run: |
@@ -33,6 +33,6 @@ jobs:
           ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             docker stop pos-frontend || true
             docker rm pos-frontend || true
-            docker pull ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest
-            docker run -d -p 80:3000 --name pos-frontend ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
+            docker run -d -p 80:3000 --name pos-frontend ${{ secrets.DOCKERHUB_USERNAME}}/pos-frontend:latest
           EOF
