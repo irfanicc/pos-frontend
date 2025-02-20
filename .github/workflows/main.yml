@@ -40,4 +40,4 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
             docker stop pos-frontend || true
             docker rm pos-frontend || true
-            docker run -d -p 3000:3000 --name pos-frontend ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
+            docker run -d -p 5173:5173 --name pos-frontend ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
