@@ -27,17 +27,20 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest .
+          docker build --build-arg REACT_APP_API_URL=http://${{ secrets.BACKEND_EC2_HOST }}:8000 -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.FRONTEND_EC2_HOST }}
           username: ubuntu
-          key: ${{ secrets.AWS_PRIVATE_KEY}}
+          key: ${{ secrets.AWS_PRIVATE_KEY }}
           script: |
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
             docker stop pos-frontend || true
             docker rm pos-frontend || true
-            docker run -d -p 5173:5173 --name pos-frontend ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
+            docker run -d -p 5173:5173 \
+              --env REACT_APP_API_URL=http://${{ secrets.BACKEND_EC2_HOST }}:8000 \
+              --name pos-frontend \
+              ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
