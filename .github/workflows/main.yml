@@ -28,15 +28,15 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           docker build \
-            --build-arg REACT_APP_API_URL="http://${{ secrets.BACKEND_EC2_HOST }}:8000" \
+            --build-arg REACT_APP_API_URL="http://3.110.167.179:8000" \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest \
-            .  # **Ensure context is specified**
+            .  # Ensure context is specified
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.FRONTEND_EC2_HOST }}  # Frontend EC2 instance IP
           username: ubuntu
           key: ${{ secrets.AWS_PRIVATE_KEY }}
           script: |
@@ -44,5 +44,5 @@ jobs:
             docker stop pos-frontend || true
             docker rm pos-frontend || true
             docker run -d -p 5173:5173 --name pos-frontend \
-              -e REACT_APP_API_URL="http://${{ secrets.BACKEND_EC2_HOST }}:8000" \
+              -e REACT_APP_API_URL="http://3.110.167.179:8000" \
               ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
