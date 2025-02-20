@@ -27,8 +27,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker buildx build --build-arg REACT_APP_API_URL=http://${{ secrets.BACKEND_EC2_HOST }}:8000 \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest . --output type=docker
+          docker build --build-arg REACT_APP_API_URL=http://${{ secrets.BACKEND_EC2_HOST }}:8000 \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
       - name: Deploy to EC2 via SSH
