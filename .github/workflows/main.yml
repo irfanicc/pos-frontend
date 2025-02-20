@@ -27,15 +27,15 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest
+          docker build -t ${{ secrets.DOCKERHUV_USERNAME }}/pos-frontend:latest .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
-          key: ${{ secrets.AWS_PRIVATE_KEY }}
+          key: ${{ secrets.AWS_PRIVATE_KEY}}
           script: |
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
             docker stop pos-frontend || true
