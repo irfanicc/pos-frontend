@@ -13,62 +13,112 @@ const AddDish = () => {
     Dish_Information: "",
     Dish_Image: null,
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDishData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle file input changes
   const handleFileChange = (e) => {
     setDishData((prev) => ({ ...prev, Dish_Image: e.target.files[0] }));
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     const formData = new FormData();
     Object.keys(dishData).forEach((key) => {
       formData.append(key, dishData[key]);
     });
 
     try {
-      await axios.post("http://127.0.0.1:8000/Home/Dishes-list/", formData, {
+      await axios.post(`${process.env.REACT_APP_API_URL}/Home/Dishes-list/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("Dish added successfully!");
       navigate("/");
     } catch (error) {
       console.error("Error adding dish:", error.response?.data || error.message);
-      alert("Failed to add dish.");
+      setError("Failed to add dish. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="add-dish-container">
       <h2>Add New Dish</h2>
+      {error && <div className="error-message">{error}</div>}
       <form onSubmit={handleSubmit}>
-        <input type="text" name="Dish_Name" placeholder="Dish Name" value={dishData.Dish_Name} onChange={handleChange} required />
-        <input type="number" name="Dish_Price" placeholder="Price" value={dishData.Dish_Price} onChange={handleChange} required />
-        <select name="Dish_Quantity" value={dishData.Dish_Quantity} onChange={handleChange}>
+        <input
+          type="text"
+          name="Dish_Name"
+          placeholder="Dish Name"
+          value={dishData.Dish_Name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="number"
+          name="Dish_Price"
+          placeholder="Price"
+          value={dishData.Dish_Price}
+          onChange={handleChange}
+          required
+        />
+        <select
+          name="Dish_Quantity"
+          value={dishData.Dish_Quantity}
+          onChange={handleChange}
+        >
           <option value="Full">Full</option>
           <option value="Half">Half</option>
         </select>
-        <select name="Dish_Food_Type" value={dishData.Dish_Food_Type} onChange={handleChange}>
+        <select
+          name="Dish_Food_Type"
+          value={dishData.Dish_Food_Type}
+          onChange={handleChange}
+        >
           <option value="Chicken">Chicken</option>
           <option value="Mutton">Mutton</option>
           <option value="Veg">Veg</option>
         </select>
-        <select name="Dish_Type" value={dishData.Dish_Type} onChange={handleChange}>
+        <select
+          name="Dish_Type"
+          value={dishData.Dish_Type}
+          onChange={handleChange}
+        >
           <option value="Main Course">Main Course</option>
           <option value="Starter">Starter</option>
           <option value="Sweet">Sweet</option>
           <option value="Cold Drink">Cold Drink</option>
           <option value="Roti">Roti</option>
         </select>
-        <textarea name="Dish_Information" placeholder="Dish Information" value={dishData.Dish_Information} onChange={handleChange} required />
-        <input type="file" accept="image/*" onChange={handleFileChange} required />
-        <button type="submit">Add Dish</button>
+        <textarea
+          name="Dish_Information"
+          placeholder="Dish Information"
+          value={dishData.Dish_Information}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          required
+        />
+        <button type="submit" disabled={loading}>
+          {loading ? "Adding..." : "Add Dish"}
+        </button>
       </form>
     </div>
   );
