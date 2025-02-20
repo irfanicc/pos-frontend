@@ -27,7 +27,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build --build-arg REACT_APP_API_URL=http://${{ secrets.BACKEND_EC2_HOST }}:8000 -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest .
+          docker buildx build --build-arg REACT_APP_API_URL=http://${{ secrets.BACKEND_EC2_HOST }}:8000 \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest . --output type=docker
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
       - name: Deploy to EC2 via SSH
@@ -40,7 +41,6 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
             docker stop pos-frontend || true
             docker rm pos-frontend || true
-            docker run -d -p 5173:5173 \
-              --env REACT_APP_API_URL=http://${{ secrets.BACKEND_EC2_HOST }}:8000 \
-              --name pos-frontend \
+            docker run -d -p 5173:5173 --name pos-frontend \
+              -e REACT_APP_API_URL=http://${{ secrets.BACKEND_EC2_HOST }}:8000 \
               ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
