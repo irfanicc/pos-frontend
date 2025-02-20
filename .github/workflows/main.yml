@@ -36,7 +36,7 @@ jobs:
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.FRONTEND_EC2_HOST }}  # Frontend EC2 instance IP
+          host: ${{ secrets.EC2_HOST }}  # Frontend EC2 instance IP
           username: ubuntu
           key: ${{ secrets.AWS_PRIVATE_KEY }}
           script: |
