@@ -33,9 +33,9 @@ const App = () => {
         if (filter) params.Dish_Type = filter;
 
         const [dishesResponse, tablesResponse, employeesResponse] = await Promise.all([
-          axios.get(`${process.env.REACT_APP_API_URL}/Home/Dishes-list/`, { params }),
-          axios.get(`${process.env.REACT_APP_API_URL}/Home/Tables/`),
-          axios.get(`${process.env.REACT_APP_API_URL}/Home/Employe-list/`),
+          axios.get(`${env.VITE_API_URL}/Home/Dishes-list/`, { params }),
+          axios.get(`${env.VITE_API_URL}/Home/Tables/`),
+          axios.get(`${env.VITE_API_URL}/Home/Employe-list/`),
         ]);
         
         setDishes(dishesResponse.data);
@@ -82,7 +82,7 @@ const App = () => {
       dishes: (order[activeTable] || []).map((item) => ({ dish: item.id, quantity: item.quantity })),
     };
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/Home/Bill-list/`, formattedOrder);
+      const response = await axios.post(`${process.env.VITE_API_URL}/Home/Bill-list/`, formattedOrder);
       alert("Order placed successfully! Bill Number: " + response.data.bill_number);
       setOrder((prev) => ({ ...prev, [activeTable]: [] }));
       localStorage.setItem("orders", JSON.stringify({ ...order, [activeTable]: [] }));
