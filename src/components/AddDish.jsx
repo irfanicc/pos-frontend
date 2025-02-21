@@ -13,6 +13,7 @@ const AddDish = () => {
     Dish_Information: "",
     Dish_Image: null,
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -26,7 +27,9 @@ const AddDish = () => {
 
   // Handle file input changes
   const handleFileChange = (e) => {
-    setDishData((prev) => ({ ...prev, Dish_Image: e.target.files[0] }));
+    if (e.target.files.length > 0) {
+      setDishData((prev) => ({ ...prev, Dish_Image: e.target.files[0] }));
+    }
   };
 
   // Handle form submission
@@ -35,20 +38,26 @@ const AddDish = () => {
     setLoading(true);
     setError(null);
 
+    if (!dishData.Dish_Image) {
+      setError("Please upload a dish image.");
+      setLoading(false);
+      return;
+    }
+
     const formData = new FormData();
     Object.keys(dishData).forEach((key) => {
       formData.append(key, dishData[key]);
     });
 
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/Home/Dishes-list/`, formData, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/Home/Dishes-list/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
       alert("Dish added successfully!");
-      navigate("/");
+      setTimeout(() => navigate("/"), 1000); // Delay for better UX
     } catch (error) {
-      console.error("Error adding dish:", error.response?.data || error.message);
-      setError("Failed to add dish. Please try again later.");
+      setError(error.response?.data?.message || "Failed to add dish. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -75,28 +84,16 @@ const AddDish = () => {
           onChange={handleChange}
           required
         />
-        <select
-          name="Dish_Quantity"
-          value={dishData.Dish_Quantity}
-          onChange={handleChange}
-        >
+        <select name="Dish_Quantity" value={dishData.Dish_Quantity} onChange={handleChange}>
           <option value="Full">Full</option>
           <option value="Half">Half</option>
         </select>
-        <select
-          name="Dish_Food_Type"
-          value={dishData.Dish_Food_Type}
-          onChange={handleChange}
-        >
+        <select name="Dish_Food_Type" value={dishData.Dish_Food_Type} onChange={handleChange}>
           <option value="Chicken">Chicken</option>
           <option value="Mutton">Mutton</option>
           <option value="Veg">Veg</option>
         </select>
-        <select
-          name="Dish_Type"
-          value={dishData.Dish_Type}
-          onChange={handleChange}
-        >
+        <select name="Dish_Type" value={dishData.Dish_Type} onChange={handleChange}>
           <option value="Main Course">Main Course</option>
           <option value="Starter">Starter</option>
           <option value="Sweet">Sweet</option>
@@ -110,12 +107,7 @@ const AddDish = () => {
           onChange={handleChange}
           required
         />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          required
-        />
+        <input type="file" accept="image/*" onChange={handleFileChange} required />
         <button type="submit" disabled={loading}>
           {loading ? "Adding..." : "Add Dish"}
         </button>

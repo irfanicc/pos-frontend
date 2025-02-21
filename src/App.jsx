@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaHome } from "react-icons/fa";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Header from "./components/Header";
 import SearchFilter from "./components/SearchFilter";
 import DropdownSection from "./components/DropdownSection";
 import Menu from "./components/Menu";
 import OrderSummary from "./components/OrderSummary";
 import AddDish from "./components/AddDish";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import "./App.css";
 
 const App = () => {
   const [dishes, setDishes] = useState([]);
-  const [order, setOrder] = useState(() => {
-    const savedOrders = localStorage.getItem("orders");
-    return savedOrders ? JSON.parse(savedOrders) : {};
-  });
+  const [order, setOrder] = useState(() => JSON.parse(localStorage.getItem("orders")) || {});
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
   const [tables, setTables] = useState([]);
@@ -26,7 +23,6 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch data from the backend
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -35,16 +31,18 @@ const App = () => {
         const params = {};
         if (search) params.Dish_Name = search;
         if (filter) params.Dish_Type = filter;
+
         const [dishesResponse, tablesResponse, employeesResponse] = await Promise.all([
           axios.get(`${process.env.REACT_APP_API_URL}/Home/Dishes-list/`, { params }),
           axios.get(`${process.env.REACT_APP_API_URL}/Home/Tables/`),
           axios.get(`${process.env.REACT_APP_API_URL}/Home/Employe-list/`),
         ]);
+        
         setDishes(dishesResponse.data);
         setTables(tablesResponse.data);
         setEmployees(employeesResponse.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
+      } catch (err) {
+        console.error("Error fetching data:", err);
         setError("Failed to fetch data. Please try again later.");
       } finally {
         setLoading(false);
@@ -53,82 +51,25 @@ const App = () => {
     fetchData();
   }, [search, filter]);
 
-  // Save orders to localStorage
   useEffect(() => {
     localStorage.setItem("orders", JSON.stringify(order));
   }, [order]);
 
-  // Add a dish to the order
-  const addToOrder = (dish) => {
-    if (!selectedTable) {
-      alert("Please select a table before adding items to the order.");
-      return;
-    }
-    setOrder((prevOrder) => {
-      const tableOrder = prevOrder[selectedTable] || [];
-      const existingDish = tableOrder.find((item) => item.id === dish.id);
-      let updatedTableOrder;
-      if (existingDish) {
-        updatedTableOrder = tableOrder.map((item) =>
-          item.id === dish.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      } else {
-        updatedTableOrder = [...tableOrder, { ...dish, quantity: 1 }];
-      }
-      return { ...prevOrder, [selectedTable]: updatedTableOrder };
-    });
-    setActiveTable(selectedTable);
-  };
-
-  // Remove a dish from the order
-  const removeFromOrder = (id) => {
-    if (!activeTable) return;
-    setOrder((prevOrder) => {
-      const tableOrder = prevOrder[activeTable] || [];
-      const updatedTableOrder = tableOrder.filter((item) => item.id !== id);
-      return { ...prevOrder, [activeTable]: updatedTableOrder };
-    });
-  };
-
-  // Increase the quantity of a dish in the order
-  const increaseQuantity = (id) => {
+  const modifyOrder = (id, quantityChange) => {
     if (!activeTable) return;
     setOrder((prevOrder) => {
       const tableOrder = prevOrder[activeTable] || [];
       const updatedTableOrder = tableOrder.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+        item.id === id ? { ...item, quantity: Math.max(1, item.quantity + quantityChange) } : item
       );
       return { ...prevOrder, [activeTable]: updatedTableOrder };
     });
   };
 
-  // Decrease the quantity of a dish in the order
-  const decreaseQuantity = (id) => {
-    if (!activeTable) return;
-    setOrder((prevOrder) => {
-      const tableOrder = prevOrder[activeTable] || [];
-      const updatedTableOrder = tableOrder
-        .map((item) =>
-          item.id === id ? { ...item, quantity: Math.max(1, item.quantity - 1) } : item
-        )
-        .filter((item) => item.quantity > 0);
-      return { ...prevOrder, [activeTable]: updatedTableOrder };
-    });
-  };
-
-  // Calculate the total price of the order
   const calculateTotal = () => {
-    const tableOrder = order[activeTable] || [];
-    return tableOrder.reduce((total, item) => total + item.Dish_Price * item.quantity, 0).toFixed(2);
+    return (order[activeTable] || []).reduce((total, item) => total + item.Dish_Price * item.quantity, 0).toFixed(2);
   };
 
-  // View the order for a specific table
-  const viewOrder = (tableId) => {
-    setActiveTable(tableId);
-    setSelectedTable(tableId);
-  };
-
-  // Send the order to the backend
   const sendOrder = async () => {
     if (!selectedEmployee) {
       alert("Please select an employee before placing the order.");
@@ -138,21 +79,18 @@ const App = () => {
       employee: selectedEmployee,
       table: activeTable || null,
       total_amount: calculateTotal(),
-      dishes: (order[activeTable] || []).map((item) => ({
-        dish: item.id,
-        quantity: item.quantity,
-      })),
+      dishes: (order[activeTable] || []).map((item) => ({ dish: item.id, quantity: item.quantity })),
     };
     try {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/Home/Bill-list/`, formattedOrder);
       alert("Order placed successfully! Bill Number: " + response.data.bill_number);
-      setOrder({ ...order, [activeTable]: [] });
+      setOrder((prev) => ({ ...prev, [activeTable]: [] }));
       localStorage.setItem("orders", JSON.stringify({ ...order, [activeTable]: [] }));
       setSelectedTable("");
       setSelectedEmployee("");
       setActiveTable("");
-    } catch (error) {
-      console.error("Error placing order:", error.response?.data || error.message);
+    } catch (err) {
+      console.error("Error placing order:", err.response?.data || err.message);
       alert("Failed to place order.");
     }
   };
@@ -172,7 +110,7 @@ const App = () => {
             path="/"
             element={
               <>
-                <Header order={order} viewOrder={viewOrder} />
+                <Header order={order} viewOrder={setActiveTable} />
                 <SearchFilter search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} />
                 <DropdownSection
                   tables={tables}
@@ -183,16 +121,16 @@ const App = () => {
                   setSelectedEmployee={setSelectedEmployee}
                   order={order}
                 />
-                <Menu dishes={dishes} addToOrder={addToOrder} />
+                <Menu dishes={dishes} addToOrder={(dish) => modifyOrder(dish.id, 1)} />
                 <OrderSummary
                   activeTable={activeTable}
                   selectedEmployee={selectedEmployee}
                   currentTableOrder={order[activeTable] || []}
                   calculateTotal={calculateTotal}
-                  removeFromOrder={removeFromOrder}
+                  removeFromOrder={(id) => modifyOrder(id, -1)}
                   sendOrder={sendOrder}
-                  increaseQuantity={increaseQuantity}
-                  decreaseQuantity={decreaseQuantity}
+                  increaseQuantity={(id) => modifyOrder(id, 1)}
+                  decreaseQuantity={(id) => modifyOrder(id, -1)}
                 />
               </>
             }

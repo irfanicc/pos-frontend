@@ -15,8 +15,8 @@ COPY . .
 EXPOSE 5173
 
 # Set environment variable for API URL (Backend)
-ARG REACT_APP_API_URL
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
-# Start the React development server and bind to all interfaces
+# Start the Vite development server and bind to all interfaces
 CMD ["npm", "run", "dev", "--", "--host"]
