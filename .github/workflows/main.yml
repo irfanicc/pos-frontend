@@ -3,55 +3,36 @@ name: Deploy Frontend
 on:
   push:
     branches:
-      - main  # Changed from 'new_staging_test_3' to 'main'
+      - main
+    paths:
+      - "pos-frontend/**"  # Runs only when files in pos-frontend change
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Ensure all files are fetched
-
-      - name: Debug - Check Repository Structure
-        run: |
-          echo "Current Directory:"
-          pwd
-          echo "Repository Structure:"
-          ls -R  # List all files to confirm pos-frontend exists
-
-      - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build and Push Docker Image
         run: |
-          if [ -d "./pos-frontend" ]; then
-            echo "pos-frontend found, proceeding with build..."
-            docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest ./pos-frontend
-            docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
-          else
-            echo "ERROR: pos-frontend directory not found!"
-            exit 1
-          fi
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest ./pos-frontend
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
-      - name: Deploy to EC2 via SSH
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
+          username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.AWS_PRIVATE_KEY }}
           script: |
-            cd /home/ubuntu/pos-app
-            docker-compose down
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
-            docker-compose up -d --force-recreate
-            docker system prune -f
-            docker ps -a
+            cd /home/ubuntu/pos-app  # Navigate to the correct directory
+            docker-compose down  # Stop running containers
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest  # Pull the latest image
+            docker-compose up -d --force-recreate  # Start fresh containers
+            docker system prune -f  # Cleanup unused images
+            docker ps -a  # Check running containers
+            docker logs $(docker ps -aq --filter "name=pos-frontend")  # Debug logs
