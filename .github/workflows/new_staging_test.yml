@@ -26,7 +26,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest ./pos-frontend
+          cd pos-frontend  # Ensure we are in the correct directory
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest
 
       - name: Deploy to Server
@@ -37,6 +38,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/pos-deployment
-            docker-compose down
-            docker pull ${{ secrets.DOCKER_USERNAME }}/pos-frontend:latest
-            docker-compose up -d
+            docker-compose pull pos-frontend  # Pull only frontend image
+            docker-compose up -d pos-frontend  # Restart only frontend container
