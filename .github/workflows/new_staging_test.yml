@@ -15,7 +15,7 @@ jobs:
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Build Docker Image
+      - name: Build and Push Docker Image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
@@ -25,8 +25,10 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.AWS_PRIVATE_KEY}}
+          key: ${{ secrets.AWS_PRIVATE_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
-            docker-compose up -d
-            docker system prune -f
+            cd ~/pos-app  # Ensure we're in the correct directory
+            docker-compose down  # Stop and remove running containers
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest  # Pull latest image
+            docker-compose up -d  # Start fresh containers
+            docker system prune -f  # Clean up unused images
