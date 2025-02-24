@@ -1,0 +1,57 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main  # Changed from 'new_staging_test_3' to 'main'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure all files are fetched
+
+      - name: Debug - Check Repository Structure
+        run: |
+          echo "Current Directory:"
+          pwd
+          echo "Repository Structure:"
+          ls -R  # List all files to confirm pos-frontend exists
+
+      - name: Set Up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        run: |
+          if [ -d "./pos-frontend" ]; then
+            echo "pos-frontend found, proceeding with build..."
+            docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest ./pos-frontend
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
+          else
+            echo "ERROR: pos-frontend directory not found!"
+            exit 1
+          fi
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/pos-app
+            docker-compose down
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
+            docker-compose up -d --force-recreate
+            docker system prune -f
+            docker ps -a
