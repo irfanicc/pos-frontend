@@ -40,7 +40,7 @@ const AddDish = () => {
       alert("✅ Dish added successfully!");
       navigate("/");
     } catch (error) {
-      console.error("❌ Error adding dish:", error.response?.data || error.message);
+      console.error("❌ Errorr adding dish:", error.response?.data || error.message);
       alert("❌ Failed to add dish.");
     }
   };
