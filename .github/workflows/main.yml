@@ -1,8 +1,8 @@
-name: Frontend Deployment
+#name: Frontend Deployment
 
-on:
+#on:
   push:
-    branches:
+   # branches:
       - main  # Change if your default branch is different
 
 jobs:
