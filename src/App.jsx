@@ -113,7 +113,7 @@ const App = () => {
   }, [selectedTable]);
 
   const calculateTotal = useCallback(() => {
-    return order[selectedTable]?.reduce((total, item) => total + item.price * item.quantity, 0) || 0;
+    return order[selectedTable]?.reduce((total, item) => total + item.Dish_Price * item.quantity, 0) || 0;
   }, [order, selectedTable]);
 
   const sendOrder = useCallback(async () => {
