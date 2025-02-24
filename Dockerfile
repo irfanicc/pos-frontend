@@ -4,7 +4,7 @@ FROM node:18-alpine
 # Set the working directory
 WORKDIR /app
 
-# Install dependencies more efficiently
+# Install dependencies more efficientlyw
 COPY package*.json ./
 RUN npm install --frozen-lockfile
 
