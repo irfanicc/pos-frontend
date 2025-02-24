@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - new_staging_test
+    paths:
+      - "pos-frontend/**"  # Runs only when files in pos-frontend change
 
 jobs:
   build-and-deploy:
@@ -17,7 +19,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest ./pos-frontend
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
       - name: Deploy to EC2
