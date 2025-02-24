@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "pos-frontend/**"  # Runs only when files in pos-frontend change
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
