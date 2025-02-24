@@ -1,47 +1,38 @@
-#name: Frontend Deployment
+name: Deploy Frontend
 
-#on:
+on:
   push:
-   # branches:
-      - main  # Change if your default branch is different
+    branches:
+      - main
+    paths:
+      - "pos-frontend/**"  # Runs only when files in pos-frontend change
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Debug - List Files
-        run: ls -l  # Check available files and directories
-
-      - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build and Push Docker Image
         run: |
-          docker build \
-            --build-arg VITE_API_URL="http://3.110.167.179:8000" \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest ./pos-frontend
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
-      - name: Deploy to EC2 via SSH
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}  # Frontend EC2 instance IP
-          username: ubuntu
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.AWS_PRIVATE_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
-            docker stop pos-frontend || true
-            docker rm pos-frontend || true
-            docker run -d -p 5173:5173 --name pos-frontend \
-              -e VITE_API_URL="http://3.110.167.179:8000" \
-              ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
+            cd /home/ubuntu/pos-app  # Navigate to the correct directory
+            docker-compose down  # Stop running containers
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest  # Pull the latest image
+            docker-compose up -d --force-recreate  # Start fresh containers
+            docker system prune -f  # Cleanup unused images
+            docker ps -a  # Check running containers
+            docker logs $(docker ps -aq --filter "name=pos-frontend")  # Debug logs
