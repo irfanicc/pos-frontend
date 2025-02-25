@@ -24,7 +24,7 @@ const App = () => {
   const [employees, setEmployees] = useState([]);
   const [selectedTable, setSelectedTable] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [activeTable, setActiveTable] = useState("");
+  const [activeTable, setActiveTable] = useState(""); // Track the active table being viewed
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,35 +55,49 @@ const App = () => {
     localStorage.setItem("orders", JSON.stringify(order));
   }, [order]);
 
+
+  // Reset selectedTable and selectedEmployee if the order is empty for that table
+  useEffect(() => {
+    if (selectedTable && (!order[selectedTable] || order[selectedTable].length === 0)) {
+      setSelectedTable("");
+      setSelectedEmployee("");
+      setActiveTable("");
+    }
+  }, [order]);
+
+  
   const addToOrder = useCallback((dish) => {
+    if (!selectedTable) {
+      alert("❌ Please select a table first.");
+      return;
+    }
+  
     setOrder((prevOrder) => {
+      // Create a new order object (immutability)
       const updatedOrder = { ...prevOrder };
-      if (!updatedOrder[selectedTable]) {
-        updatedOrder[selectedTable] = [];
-      }
-      const existingItemIndex = updatedOrder[selectedTable].findIndex((item) => item.id === dish.id);
+  
+      // Ensure the table has an array (new array to avoid mutating state)
+      const tableOrder = updatedOrder[selectedTable] ? [...updatedOrder[selectedTable]] : [];
+  
+      // Find if the dish already exists in the table's order
+      const existingItemIndex = tableOrder.findIndex((item) => item.id === dish.id);
       if (existingItemIndex !== -1) {
-        updatedOrder[selectedTable][existingItemIndex].quantity += 1;
+        // Update quantity immutably
+        tableOrder[existingItemIndex] = { ...tableOrder[existingItemIndex], quantity: tableOrder[existingItemIndex].quantity + 1 };
       } else {
-        updatedOrder[selectedTable].push({ ...dish, quantity: 1 });
+        // Add new dish
+        tableOrder.push({ ...dish, quantity: 1 });
       }
+  
+      // Update the order state
+      updatedOrder[selectedTable] = tableOrder;
+  
       return updatedOrder;
     });
   }, [selectedTable]);
+  
 
-  const removeFromOrder = useCallback((dishId) => {
-    setOrder((prevOrder) => {
-      const updatedOrder = { ...prevOrder };
-      if (updatedOrder[selectedTable]) {
-        updatedOrder[selectedTable] = updatedOrder[selectedTable].filter((item) => item.id !== dishId);
-        if (updatedOrder[selectedTable].length === 0) {
-          delete updatedOrder[selectedTable];
-        }
-      }
-      return updatedOrder;
-    });
-  }, [selectedTable]);
-
+  // Increase the quantity of a dish in the selected table's order
   const increaseQuantity = useCallback((dishId) => {
     setOrder((prevOrder) => {
       const updatedOrder = { ...prevOrder };
@@ -96,6 +110,7 @@ const App = () => {
     });
   }, [selectedTable]);
 
+  // Decrease the quantity of a dish in the selected table's order
   const decreaseQuantity = useCallback((dishId) => {
     setOrder((prevOrder) => {
       const updatedOrder = { ...prevOrder };
@@ -106,16 +121,36 @@ const App = () => {
 
         if (updatedOrder[selectedTable].length === 0) {
           delete updatedOrder[selectedTable];
+          setSelectedTable("");
+          setSelectedEmployee("");
         }
       }
       return updatedOrder;
     });
   }, [selectedTable]);
 
+  // Remove a dish from the selected table's order
+  const removeFromOrder = useCallback((dishId) => {
+    setOrder((prevOrder) => {
+      const updatedOrder = { ...prevOrder };
+      if (updatedOrder[selectedTable]) {
+        updatedOrder[selectedTable] = updatedOrder[selectedTable].filter((item) => item.id !== dishId);
+        if (updatedOrder[selectedTable].length === 0) {
+          delete updatedOrder[selectedTable];
+          setSelectedTable("");
+          setSelectedEmployee("");
+        }
+      }
+      return updatedOrder;
+    });
+  }, [selectedTable]);
+
+  // Calculate the total price for the selected table's order
   const calculateTotal = useCallback(() => {
     return order[selectedTable]?.reduce((total, item) => total + item.Dish_Price * item.quantity, 0) || 0;
   }, [order, selectedTable]);
 
+  // Send the order to the backend
   const sendOrder = useCallback(async () => {
     if (!selectedTable || !selectedEmployee || !order[selectedTable]?.length) {
       alert("❌ Please select a table, employee, and add items to the order.");
@@ -142,6 +177,12 @@ const App = () => {
     }
   }, [selectedTable, selectedEmployee, order]);
 
+  // Function to set the active table when a table button is clicked in the Header
+  const handleViewOrder = (tableId) => {
+    setActiveTable(tableId);
+    setSelectedTable(tableId); // Optionally, set the selected table as well
+  };
+
   return (
     <Router>
       <div className="pos-container">
@@ -155,7 +196,7 @@ const App = () => {
             path="/"
             element={
               <>
-                <Header order={order} viewOrder={setActiveTable} />
+                <Header order={order} viewOrder={handleViewOrder} />
                 <SearchFilter search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} />
                 <DropdownSection
                   tables={tables}
@@ -168,9 +209,9 @@ const App = () => {
                 />
                 <Menu dishes={dishes} addToOrder={addToOrder} />
                 <OrderSummary
-                  activeTable={activeTable}
+                  selectedTable={activeTable || selectedTable} // Display orders for the active table
                   selectedEmployee={selectedEmployee}
-                  currentTableOrder={order[activeTable] || []}
+                  currentTableOrder={order[activeTable || selectedTable] || []} // Use activeTable if set
                   calculateTotal={calculateTotal}
                   removeFromOrder={removeFromOrder}
                   sendOrder={sendOrder}
