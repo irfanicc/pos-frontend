@@ -12,6 +12,8 @@ import AddDish from "./components/AddDish";
 
 import "./App.css";
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 const App = () => {
   const [dishes, setDishes] = useState([]);
   const [order, setOrder] = useState(() => {
@@ -29,7 +31,6 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
         const params = {};
         if (search) params.Dish_Name = search;
         if (filter) params.Dish_Type = filter;
@@ -63,69 +64,6 @@ const App = () => {
     }
   }, [order, activeTable]);
 
-  const addToOrder = useCallback((dish) => {
-    if (!selectedTable) {
-      alert("❌ Please select a table first.");
-      return;
-    }
-
-    setOrder((prevOrder) => {
-      const updatedOrder = { ...prevOrder };
-      delete updatedOrder[activeTable];
-      return updatedOrder;
-    });
-  }, [selectedTable, activeTable]);
-
-  const increaseQuantity = useCallback((dishId) => {
-    setOrder((prevOrder) => {
-      const updatedOrder = { ...prevOrder };
-      if (updatedOrder[selectedTable]) {
-        updatedOrder[selectedTable] = updatedOrder[selectedTable].map((item) =>
-          item.id === dishId ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return updatedOrder;
-    });
-  }, [selectedTable]);
-
-  const decreaseQuantity = useCallback((dishId) => {
-    setOrder((prevOrder) => {
-      const updatedOrder = { ...prevOrder };
-      if (updatedOrder[selectedTable]) {
-        updatedOrder[selectedTable] = updatedOrder[selectedTable]
-          .map((item) => (item.id === dishId ? { ...item, quantity: item.quantity - 1 } : item))
-          .filter((item) => item.quantity > 0);
-
-        if (updatedOrder[selectedTable].length === 0) {
-          delete updatedOrder[selectedTable];
-          setSelectedTable("");
-          setSelectedEmployee("");
-        }
-      }
-      return updatedOrder;
-    });
-    setActiveTable(selectedTable);
-  }, [selectedTable]);
-
-  const removeFromOrder = useCallback((dishId) => {
-    setOrder((prevOrder) => {
-      const updatedOrder = { ...prevOrder };
-      if (updatedOrder[selectedTable]) {
-        updatedOrder[selectedTable] = updatedOrder[selectedTable].filter((item) => item.id !== dishId);
-        if (updatedOrder[selectedTable].length === 0) {
-          delete updatedOrder[selectedTable];
-          setSelectedTable("");
-          setSelectedEmployee("");
-        }
-      }
-      return updatedOrder;
-    });
-  }, [selectedTable]);
-
-  const calculateTotal = useCallback(() => {
-    return order[selectedTable]?.reduce((total, item) => total + item.Dish_Price * item.quantity, 0) || 0;
-  }, [order, selectedTable]);
-
   const sendOrder = async () => {
     if (!selectedEmployee) {
       alert("Please select an employee before placing the order.");
@@ -145,7 +83,7 @@ const App = () => {
     };
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/Home/Bill-list/", formattedOrder);
+      const response = await axios.post(`${backendUrl}/Home/Bill-list/`, formattedOrder);
       alert("✅ Order placed successfully! Bill Number: " + response.data.bill_number);
 
       setOrder({ ...order, [activeTable]: [] });
@@ -157,11 +95,6 @@ const App = () => {
       console.error("❌ Error placing order:", error.response?.data || error.message);
       alert("❌ Failed to place order.");
     }
-  };
-
-  const handleViewOrder = (tableId) => {
-    setSelectedTable(tableId);
-    setActiveTable(tableId);
   };
 
   return (
@@ -177,7 +110,7 @@ const App = () => {
             path="/"
             element={
               <>
-                <Header order={order} viewOrder={handleViewOrder} />
+                <Header order={order} viewOrder={setActiveTable} />
                 <SearchFilter search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} />
                 <DropdownSection
                   tables={tables}
@@ -188,16 +121,14 @@ const App = () => {
                   setSelectedEmployee={setSelectedEmployee}
                   order={order}
                 />
-                <Menu dishes={dishes} addToOrder={addToOrder} />
+                <Menu dishes={dishes} addToOrder={setOrder} />
                 <OrderSummary
                   selectedTable={activeTable || selectedTable}
                   selectedEmployee={selectedEmployee}
                   currentTableOrder={order[activeTable || selectedTable] || []}
-                  calculateTotal={calculateTotal}
-                  removeFromOrder={removeFromOrder}
+                  calculateTotal={() => order[selectedTable]?.reduce((total, item) => total + item.Dish_Price * item.quantity, 0) || 0}
+                  removeFromOrder={setOrder}
                   sendOrder={sendOrder}
-                  increaseQuantity={increaseQuantity}
-                  decreaseQuantity={decreaseQuantity}
                 />
               </>
             }
