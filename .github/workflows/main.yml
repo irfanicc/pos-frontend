@@ -24,12 +24,37 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Build and Push Docker Image
+      - name: Build Docker Image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest ./pos-frontend
+
+      # Run Trivy vulnerability scan
+      - name: Run Trivy Vulnerability Scan
+        id: trivy_scan
+        continue-on-error: true  # Continue to next step even if scan fails
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest"
+          format: "table"
+          exit-code: 1  # Fail if vulnerabilities are found
+          severity: "CRITICAL,HIGH"
+
+      # Send Slack notification if Trivy scan fails
+      - name: Send Slack Notification on Failure
+        if: failure() && steps.trivy_scan.outcome == 'failure'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: "🚨 *Trivy Scan Failed!* \nFrontend image has critical vulnerabilities. Check logs in GitHub Actions."
+          SLACK_COLOR: "#ff0000"
+
+      - name: Push Docker Image (if scan passes)
+        if: success()
+        run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
       - name: Deploy to EC2 via SSH
+        if: success()
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
