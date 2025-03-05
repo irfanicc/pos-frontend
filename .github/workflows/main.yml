@@ -68,20 +68,21 @@ jobs:
             docker run -d -p 5173:5173 --name pos-frontend \
               ${{ secrets.DOCKERHUB_USERNAME }}/pos-frontend:latest
 
-    # Send Slack notification on success or failure
-    finally:
-      - name: Send Slack Notification on Success
-        if: success()
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_MESSAGE: "✅ *Frontend Deployment Successful!* 🎉\nFrontend app is deployed successfully on EC2. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
-          SLACK_COLOR: "#36a64f"
+    # Separate Slack notifications based on success or failure
+    # Notify on Success
+    - name: Send Slack Notification on Success
+      if: success()
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_MESSAGE: "✅ *Frontend Deployment Successful!* 🎉\nFrontend app is deployed successfully on EC2. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+        SLACK_COLOR: "#36a64f"
 
-      - name: Send Slack Notification on Failure
-        if: failure()
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_MESSAGE: "⚠️ *Frontend Deployment Failed!* ❌\nCheck logs in GitHub Actions: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
-          SLACK_COLOR: "#ff0000"
+    # Notify on Failure
+    - name: Send Slack Notification on Failure
+      if: failure()
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_MESSAGE: "⚠️ *Frontend Deployment Failed!* ❌\nCheck logs in GitHub Actions: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+        SLACK_COLOR: "#ff0000"
