@@ -6,7 +6,7 @@ import PropTypes from "prop-types"; // Import prop-types for validation
 const Header = ({ order, viewOrder }) => {
   return (
     <div className="header">
-      <h1>Restaurant POS</h1>
+      <h1>restaurant POS</h1>
       {Object.keys(order).map(
         (tableId) =>
           order[tableId].length > 0 && (
