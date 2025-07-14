@@ -3,16 +3,12 @@ name: Deploy React to EC2
 on:
   push:
     branches:
-      - test
+      - test  # or your deployment branch
 
 jobs:
   deploy:
-    # Explicitly target your self-hosted runner
-    runs-on: self-hosted
-    
-    # You can add labels to be more specific if you have multiple runners
-    # runs-on: [self-hosted, linux, x64]
-    
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -22,31 +18,27 @@ jobs:
         with:
           node-version: '18'
 
-      # Since we're running on the self-hosted runner, we might not need SSH
-      # unless we're deploying to a different instance than the runner
-      - name: Verify runner location
+      - name: Add SSH key
         run: |
-          echo "Running on $(hostname)"
-          echo "IP: $(hostname -I)"
-          
-      - name: Install dependencies and build
-        run: |
-          npm ci
-          npm run build
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Docker operations
+      - name: Deploy to EC2
         run: |
-          # Stop and remove existing container if it exists
-          docker stop react-app || true
-          docker rm react-app || true
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            docker stop react-app || true
+            docker rm react-app || true
+            rm -rf ~/react-app
+          EOF
           
-          # Build new image
-          docker build -t react-app .
-          
-          # Run new container
-          docker run -d \
-            --name react-app \
-            -p 5173:5173 \
-            -e VITE_API_URL=https://your-backend-url \
-            --restart unless-stopped \
-            react-app
+          scp -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/react-app
+
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ~/react-app
+            docker build -t react-app .
+            docker run -d --name react-app -p 5173:5173 \
+              -e VITE_API_URL=https://your-backend-url \
+              react-app
+          EOF
