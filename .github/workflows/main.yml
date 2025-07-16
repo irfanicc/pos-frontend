@@ -3,7 +3,7 @@ name: Deploy pos-frontend to EC2
 on:
   push:
     branches:
-      - test  # Change to main/staging if needed
+      - test  # update as needed
 
 jobs:
   deploy:
@@ -25,11 +25,11 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Ensure pos-frontend directory exists on EC2
+      - name: Create target folder on EC2
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p ~/pos-frontend"
 
-      - name: Copy project files to EC2 (including .env)
+      - name: Upload project to EC2
         run: |
           scp -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/pos-frontend/
 
