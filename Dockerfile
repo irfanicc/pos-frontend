@@ -1,22 +1,17 @@
-# Use Node.js Alpine as the base image
-FROM node:18-alpine
-
-# Set the working directory
+# Stage 1: Build the app
+FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Install dependencies more efficientlyw
 COPY package*.json ./
 RUN npm install --frozen-lockfile
 
-# Copy the entire project
 COPY . .
 
-# Expose the port used by Vite (5173)
-EXPOSE 5173
+# Vite automatically reads from `.env` during build
+RUN npm run build
 
-# Set environment variable for API URL (Backend)
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
-
-# Start the Vite development server and bind to all interfaces
-CMD ["npm", "run", "dev", "--", "--host"]
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
