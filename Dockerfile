@@ -1,4 +1,5 @@
 # Stage 1: Build the app
+# Stage 1: Build React app with Vite
 FROM node:18-alpine AS builder
 WORKDIR /app
 
@@ -6,8 +7,6 @@ COPY package*.json ./
 RUN npm install --frozen-lockfile
 
 COPY . .
-
-# Vite automatically reads from `.env` during build
 RUN npm run build
 
 # Stage 2: Serve with Nginx
