@@ -1,16 +1,22 @@
-# Stage 1: Build the app
-# Stage 1: Build React app with Vite
-FROM node:18-alpine AS builder
+# Base image
+FROM node:18-alpine
+
+# Set working directory
 WORKDIR /app
 
+# Copy package files and install dependencies
 COPY package*.json ./
-RUN npm install --frozen-lockfile
+RUN npm install
 
+# Copy source files
 COPY . .
+
+# Build the app
 RUN npm run build
 
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Expose port
+EXPOSE 5173
+
+# Start the Vite preview server
+CMD ["npm", "run", "preview", "--", "--host", "--port", "5173"]
+

@@ -1,44 +1,37 @@
-name: Deploy pos-frontend to EC2
+name: Deploy React Vite App to EC2
 
 on:
   push:
     branches:
-      - test  # update as needed
+      - test
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
-          node-version: '18'
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "."
+          target: "/home/${{ secrets.EC2_USER }}/pos-frontend"
 
-      - name: Add SSH key and known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Create target folder on EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p ~/pos-frontend"
-
-      - name: Upload project to EC2
-        run: |
-          scp -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/pos-frontend/
-
-      - name: Build and run Docker container on EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cd ~/pos-frontend
+      - name: SSH into EC2 and deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd pos-frontend
             docker stop pos-frontend || true
             docker rm pos-frontend || true
             docker build -t pos-frontend .
-            docker run -d --name pos-frontend -p 80:80 pos-frontend
-          EOF
+            docker run -d -p 5173:5173 --name pos-frontend pos-frontend
+
