@@ -3,7 +3,7 @@ name: Deploy pos-frontend to EC2
 on:
   push:
     branches:
-      - test
+      - test  # Change to main/staging if needed
 
 jobs:
   deploy:
@@ -29,18 +29,16 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p ~/pos-frontend"
 
-      - name: Copy project files to EC2
+      - name: Copy project files to EC2 (including .env)
         run: |
-          scp -r ./* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/pos-frontend
+          scp -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/pos-frontend/
 
       - name: Build and run Docker container on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd ~/pos-frontend
             docker stop pos-frontend || true
             docker rm pos-frontend || true
             docker build -t pos-frontend .
-            docker run -d --name pos-frontend -p 5173:5173 \
-              -e VITE_API_URL=https://your-backend-url \
-              pos-frontend
+            docker run -d --name pos-frontend -p 80:80 pos-frontend
           EOF
