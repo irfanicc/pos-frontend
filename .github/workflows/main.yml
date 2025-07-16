@@ -3,7 +3,7 @@ name: Deploy pos-frontend to EC2
 on:
   push:
     branches:
-      - test  # change if your deployment branch is different
+      - test  # update this if you use a different branch for deployment
 
 jobs:
   deploy:
@@ -25,15 +25,16 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Cleanup old app on EC2
+      - name: Cleanup old app and create directory on EC2
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             docker stop pos-frontend || true
             docker rm pos-frontend || true
             rm -rf ~/pos-frontend
+            mkdir -p ~/pos-frontend
           EOF
 
-      - name: Copy project to EC2
+      - name: Copy project files to EC2
         run: |
           scp -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/pos-frontend
 
