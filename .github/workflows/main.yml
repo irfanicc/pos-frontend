@@ -3,7 +3,7 @@ name: Deploy pos-frontend to EC2
 on:
   push:
     branches:
-      - test  # update this if you use a different branch for deployment
+      - test
 
 jobs:
   deploy:
@@ -36,7 +36,7 @@ jobs:
 
       - name: Copy project files to EC2
         run: |
-          scp -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/pos-frontend
+          scp -r ./* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/pos-frontend
 
       - name: Build and run container on EC2
         run: |
