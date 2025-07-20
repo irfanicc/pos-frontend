@@ -1,0 +1,46 @@
+name: Deploy pos-frontend to Ubuntu via Docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Copy project to server
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            rm -rf ~/pos-frontend
+            mkdir -p ~/pos-frontend
+          EOF
+
+          scp -r . ubuntu@${{ secrets.SERVER_IP }}:~/pos-frontend
+
+      - name: Build and Run Docker on Server
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            cd ~/pos-frontend
+
+            # Stop and remove old container
+            docker stop pos-frontend || true
+            docker rm pos-frontend || true
+
+            # Build Docker image with backend API URL passed
+            docker build -t pos-frontend --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} .
+
+            # Run container on port 5173
+            docker run -d -p 5173:5173 --name pos-frontend pos-frontend
+          EOF
+
+
