@@ -3,7 +3,7 @@ name: Deploy Frontend to EC2
 on:
   push:
     branches:
-      - main
+      - main  # or your branch
 
 jobs:
   deploy:
@@ -13,22 +13,29 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup SSH
+    - name: Set up SSH
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+        echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H 13.127.217.202 >> ~/.ssh/known_hosts
 
-    - name: Deploy via SSH
+    - name: Deploy to EC2 via SSH
       run: |
         ssh ubuntu@13.127.217.202 << 'EOF'
+          set -e
+          mkdir -p ~/apps
+          cd ~/apps
+
+          if [ ! -d "pos-frontend" ]; then
+            git clone https://github.com/irfanicc/pos-frontend.git
+          else
+            cd pos-frontend && git pull origin main && cd ..
+          fi
+
+          cd pos-frontend
           docker stop pos-frontend || true
           docker rm pos-frontend || true
-          cd ~/apps || mkdir -p ~/apps && cd ~/apps
-          rm -rf pos-frontend
-          git clone https://github.com/<your-username>/pos-frontend.git
-          cd pos-frontend
           docker build -t pos-frontend .
           docker run -d -p 5173:5173 --name pos-frontend pos-frontend
         EOF
