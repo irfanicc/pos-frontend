@@ -1,9 +1,8 @@
-name: Deploy Frontend to EC2
+name: Deploy to EC2
 
 on:
   push:
-    branches:
-      - main  # or your branch
+    branches: [main]    # or your deploy branch
 
 jobs:
   deploy:
@@ -11,32 +10,35 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Set up SSH
+    - name: Setup SSH key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    - name: Sync pos-frontend files
       run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H 13.203.203.151 >> ~/.ssh/known_hosts
+        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./pos-frontend/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.FRONTEND_DIR }}
 
-    - name: Deploy to EC2 via SSH
+    - name: Sync pos-backend files
       run: |
-        ssh ubuntu@13.203.203.151 << 'EOF'
-          set -e
-          mkdir -p ~/apps
-          cd ~/apps
+        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./pos-backend/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.BACKEND_DIR }}
 
-          if [ ! -d "pos-frontend" ]; then
-            git clone https://github.com/irfanicc/pos-frontend.git
-          else
-            cd pos-frontend && git pull origin main && cd ..
-          fi
+    - name: Install dependencies and restart services
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          cd ${{ secrets.FRONTEND_DIR }}
+          npm install
+          pm2 stop pos-frontend || true
+          pm2 start npm --name "pos-frontend" -- run dev -- --host
 
-          cd pos-frontend
-          docker stop pos-frontend || true
-          docker rm pos-frontend || true
-          docker build -t pos-frontend .
-          docker run -d -p 5173:5173 --name pos-frontend pos-frontend
+          cd ${{ secrets.BACKEND_DIR }}
+          npm install
+          pm2 stop pos-backend || true
+          pm2 start npm --name "pos-backend" -- run start
+
+          pm2 save
         EOF
+
 
